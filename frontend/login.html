@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Attendance System</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #4c4cff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #3a3acc;
+        }
+        .role-selector {
+            margin-bottom: 1.5rem;
+        }
+        .error-message {
+            color: #e74c3c;
+            margin-top: 1rem;
+            text-align: center;
+            display: none;
+        }
+        .register-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .register-link a {
+            color: #4c4cff;
+            text-decoration: none;
+        }
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Attendance System</h1>
+        <div class="role-selector">
+            <button id="studentBtn" class="role-btn active">Student</button>
+            <button id="lecturerBtn" class="role-btn">Lecturer</button>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-group">
+                <input type="hidden" id="role" name="role" value="student">
+                <button type="submit" class="btn">Login</button>
+            </div>
+            
+            <div id="errorMessage" class="error-message">
+                Invalid username or password
+            </div>
+        </form>
+        
+        <div class="register-link">
+            Don't have an account? <a href="register.html">Register here</a>
+        </div>
+    </div>
+
+    <script>
+        // Handle role selection
+        const studentBtn = document.getElementById('studentBtn');
+        const lecturerBtn = document.getElementById('lecturerBtn');
+        const roleInput = document.getElementById('role');
+        
+        studentBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            studentBtn.classList.add('active');
+            lecturerBtn.classList.remove('active');
+            roleInput.value = 'student';
+        });
+        
+        lecturerBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            lecturerBtn.classList.add('active');
+            studentBtn.classList.remove('active');
+            roleInput.value = 'lecturer';
+        });
+        
+        // Handle form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store the token in localStorage
+                    localStorage.setItem('token', data.token);
+                    
+                    // Redirect based on role
+                    if (data.role === 'lecturer') {
+                        window.location.href = 'dash.html';
+                    } else {
+                        window.location.href = 'stu-dash.html';
+                    }
+                } else {
+                    showError(data.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('An error occurred. Please try again.');
+            }
+        });
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Hide error after 5 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

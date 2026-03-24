@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Attendance</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9fbfe;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .summary-card {
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+    }
+
+    .summary-card h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .icons-row {
+      margin: 15px 0;
+    }
+
+    .timestamp {
+      color: #777;
+      font-size: 14px;
+    }
+
+    .status-text {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .square-box {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      margin: 4px;
+      border: 2px solid #007ACC;
+      border-radius: 4px;
+      background-color: transparent;
+    }
+
+    .square-box.present {
+      background-color: #007ACC;
+      border-color: #007ACC;
+    }
+
+    .accordion {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .accordion-header {
+      padding: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    .accordion-body {
+      display: none;
+      padding: 0 20px 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f1f4f8;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ===== TODAY ATTENDANCE ===== -->
+  <div class="summary-card">
+    <h3>✔️ Attendance</h3>
+
+    <div class="icons-row" id="todayIcons"></div>
+
+    <div class="timestamp" id="timestampText"></div>
+
+    <div class="status-text" id="attendanceStatus"></div>
+  </div>
+
+  <!-- ===== WEEK ACCORDION (UI ONLY) ===== -->
+  <div class="accordion">
+    <div class="accordion-header" onclick="toggleAccordion()">▼ Last 1 Week Attendance</div>
+    <div class="accordion-body" id="accordionBody">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Sessions</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== SCRIPT ===== -->
+  <script>
+    /* ---------- DATE & TIME ---------- */
+    const today = new Date();
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function formatTime(d) {
+      let h = d.getHours();
+      let m = d.getMinutes().toString().padStart(2,'0');
+      let ap = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${m} ${ap}`;
+    }
+
+    document.getElementById("timestampText").innerText =
+      `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]} at ${formatTime(today)}`;
+
+    /* ---------- LOGIN CHECK ---------- */
+    const roll = localStorage.getItem("studentRoll");
+
+    if (!roll) {
+      alert("Student not logged in");
+      window.location.href = "doc.html";
+    }
+
+    /* ---------- FETCH ATTENDANCE ---------- */
+    document.addEventListener("DOMContentLoaded", function () {
+
+    const roll = localStorage.getItem("studentRoll");
+
+    if (!roll) {
+      alert("Student not logged in");
+      window.location.href = "doc.html";
+      return;
+  }
+
+  fetch(`http://127.0.0.1:5000/api/student-attendance/${roll}`)
+    .then(response => response.json())
+    .then(data => {
+
+      console.log("Attendance API Response:", data);
+
+      const icons = document.getElementById("todayIcons");
+      const timestampText = document.getElementById("timestampText");
+
+      icons.innerHTML = "";
+
+      if (data.status === "present") {
+
+        icons.innerHTML = `
+          <span class="square-box present"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+        `;
+
+        timestampText.innerText = "✔ Present at " + data.time;
+        timestampText.style.color = "green";
+
+      } else {
+
+        icons.innerHTML = `
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+          <span class="square-box"></span>
+        `;
+
+        timestampText.innerText = "❌ Absent";
+        timestampText.style.color = "red";
+      }
+
+    })
+    .catch(error => {
+      console.error("Attendance fetch error:", error);
+      alert("Error fetching attendance");
+    });
+
+});
+
+    /* ---------- WEEK UI (STATIC) ---------- */
+    function toggleAccordion() {
+      const body = document.getElementById("accordionBody");
+      body.style.display = body.style.display === "block" ? "none" : "block";
+
+      if (document.getElementById("attendanceTableBody").children.length === 0) {
+        generateWeekRows();
+      }
+    }
+
+    function generateWeekRows() {
+      const tbody = document.getElementById("attendanceTableBody");
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}</td>
+          <td>
+            <span class="square-box"></span>
+            <span class="square-box"></span>
+            <span class="square-box"></span>
+            <span class="square-box"></span>
+            <span class="square-box"></span>
+            <span class="square-box"></span>
+            <span class="square-box"></span>
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+  </script>
+
+</body>
+</html>

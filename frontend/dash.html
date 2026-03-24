@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lecturer Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+    }
+    .sidebar {
+      width: 220px;
+      background-color: #1f1f2e;
+      height: 100vh;
+      padding-top: 20px;
+      color: white;
+    }
+    .sidebar h2 {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+    .menu-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .menu-item:hover {
+      background-color: #33334d;
+    }
+    .menu-item.active {
+      background-color: #4c4cff;
+    }
+    .main {
+      flex-grow: 1;
+      padding: 20px;
+    }
+    .main h1 {
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .content-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 70vh;
+      display: none;
+    }
+    .default-content {
+      display: flex;
+    }
+    .camera-container {
+      text-align: center;
+    }
+    .camera-icon {
+      font-size: 100px;
+      margin-bottom: 20px;
+    }
+    .open-button {
+      background-color: #4c4cff;
+      color: white;
+      border: none;
+      padding: 12px 40px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    .open-button:hover {
+      background-color: #3a3acc;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Dashboard</h2>
+    <div class="menu-item" data-section="take-attendance">📷 Take Attendance</div>
+    <div class="menu-item" data-section="students">🎓 Students</div>
+    <div class="menu-item" data-section="courses">📚 Courses</div>
+    <div class="menu-item" data-section="branches">🛠️ Branches</div>
+    <div class="menu-item" data-section="sections">📦 Sections</div>
+    <div class="menu-item active" data-section="periods">⏰ Periods</div>
+    <div class="menu-item" data-section="categories">📁 Categories</div>
+    <div class="menu-item" data-section="reports">📈 Reports</div>
+    <div class="menu-item" data-section="admin">⚙️ Admin Panel</div>
+  </div>
+
+  <div class="main">
+
+    <div class="content-area default-content">
+      <p>Welcome, Lecturer! Select an option from the sidebar to get started.</p>
+    </div>
+
+    <div class="content-area take-attendance-content" style="display: none;">
+      <div class="camera-container">
+        <div id="camera-view" style="display: none;">
+          <video id="video" width="640" height="480" autoplay muted style="max-width: 100%; border-radius: 8px;"></video>
+          <div id="attendance-status" style="margin-top: 20px; font-weight: bold;"></div>
+        </div>
+        <div id="camera-placeholder">
+          <div class="camera-icon">📷</div>
+          <button class="open-button">Open Camera</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const role = localStorage.getItem("userRole");
+
+  if (role !== "lecturer") {
+    alert("Access denied!");
+    window.location.href = "doc.html";
+  }
+});
+
+const API_BASE_URL = 'http://localhost:5000/api';
+
+const menuItems = document.querySelectorAll('.menu-item');
+const contentAreas = document.querySelectorAll('.content-area');
+
+menuItems.forEach(item => {
+  item.addEventListener('click', function() {
+    menuItems.forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+
+    contentAreas.forEach(area => {
+      area.style.display = 'none';
+    });
+
+    const section = this.getAttribute('data-section');
+    if (section === 'take-attendance') {
+      document.querySelector('.take-attendance-content').style.display = 'flex';
+    } else {
+      document.querySelector('.default-content').style.display = 'flex';
+    }
+  });
+});
+
+const video = document.getElementById('video');
+const openButton = document.querySelector('.open-button');
+const cameraView = document.getElementById('camera-view');
+const cameraPlaceholder = document.getElementById('camera-placeholder');
+const statusDiv = document.getElementById('attendance-status');
+
+let stream = null;
+let detectionInterval = null;
+
+async function startVideo() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480, facingMode: 'user' },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    cameraPlaceholder.style.display = 'none';
+    cameraView.style.display = 'block';
+
+    detectionInterval = setInterval(captureAndDetect, 2000);
+
+  } catch (err) {
+    statusDiv.textContent = 'Could not access camera.';
+  }
+}
+
+async function captureAndDetect() {
+
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = video.videoWidth;
+  tempCanvas.height = video.videoHeight;
+  const ctx = tempCanvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  tempCanvas.toBlob(async (blob) => {
+
+    try {
+
+      const formData = new FormData();
+      formData.append('image', blob, 'frame.jpg');
+
+      const response = await fetch(`${API_BASE_URL}/recognize`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      console.log("Recognition response:", result);
+
+      // 🔥 FIXED LOGIC HERE
+      if (result.status === "processed" && result.results && result.results.length > 0) {
+
+        const student = result.results[0];
+
+        // ✅ SUCCESS OR ALREADY MARKED — SHOW DETAILS ANYWAY
+        if (student.status === "success" || student.already_recorded === true) {
+
+          localStorage.setItem("studentRoll", student.roll);
+
+          statusDiv.innerHTML = `
+            <div style="color: green; font-weight: bold;">
+              Attendance Marked Successfully!<br><br>
+              Name: ${student.name}<br>
+              Roll: ${student.roll}<br>
+              Branch: ${student.branch}<br>
+              Confidence: ${student.confidence ? student.confidence.toFixed(2) : "N/A"}
+            </div>
+          `;
+
+          clearInterval(detectionInterval);
+          setTimeout(stopCamera, 3000);
+
+        } else {
+          statusDiv.innerHTML =
+            `<div style="color:red;">Face not matched</div>`;
+        }
+
+      } else {
+        statusDiv.innerHTML =
+          `<div style="color:red;">No face detected</div>`;
+      }
+
+    } catch (err) {
+      statusDiv.textContent = 'Server error while recognizing.';
+    }
+
+  }, 'image/jpeg', 0.85);
+}
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    cameraView.style.display = 'none';
+    cameraPlaceholder.style.display = 'block';
+  }
+}
+
+openButton.addEventListener('click', startVideo);
+</script>
+
+</body>
+</html>

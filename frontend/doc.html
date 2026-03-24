@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ATTENDANCE</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e9f5fc;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 15px;
+      width: 350px;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    h2 {
+      color: #007ACC;
+      margin-bottom: 20px;
+    }
+    .account-types {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    .account-option {
+      cursor: pointer;
+      border: 2px solid transparent;
+      padding: 10px;
+      border-radius: 10px;
+      transition: 0.2s;
+    }
+    .account-option img {
+      width: 60px;
+      height: 60px;
+    }
+    .account-option.selected {
+      border-color: #007ACC;
+      background: #eef8ff;
+    }
+    .form-group {
+      margin: 10px 0;
+      text-align: left;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .login-btn {
+      background-color: #007ACC;
+      color: white;
+      padding: 12px;
+      border: none;
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+  
+    .role-message {
+      margin: 10px 0;
+      font-size: 14px;
+      color: #333;
+    }
+    .hint {
+      font-size: 12px;
+      color: green;
+      font-weight: bold;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ATTENDANCE</h2>
+    <div class="account-types">
+      <div class="account-option selected" id="lecturerOption" onclick="selectRole('lecturer')">
+        <img src="https://img.icons8.com/color/96/teacher.png" alt="Lecturer" />
+        <div>Lecturer</div>
+      </div>
+      <div class="account-option" id="studentOption" onclick="selectRole('student')">
+        <img src="https://img.icons8.com/color/96/student-center.png" alt="Student" />
+        <div>Student</div>
+      </div>
+    </div>
+
+    <div class="role-message" id="roleMessage">Hello lecturer!<br>Please fill out the form below to get started</div>
+
+    <div class="form-group">
+      <input type="text" id="username" placeholder="Username" />
+    </div>
+    <div class="form-group">
+      <input type="password" id="password" placeholder="Password" />
+    </div>
+    <div class="hint">Hint: Username is the password</div>
+
+    <button class="login-btn" onclick="login()">Login</button>
+    <p style="margin-top: 15px; font-size: 14px;">
+     Don’t have an account?
+  <a href="register.html" style="color:#007ACC; font-weight:bold;">
+    Register here
+  </a>
+</p>
+    
+  </div>
+
+  <script>
+  let currentRole = 'lecturer';
+
+  function selectRole(role) {
+    currentRole = role;
+
+    // Toggle selection UI
+    document.getElementById('lecturerOption').classList.remove('selected');
+    document.getElementById('studentOption').classList.remove('selected');
+    document.getElementById(role + 'Option').classList.add('selected');
+
+    // Update message
+    document.getElementById('roleMessage').innerHTML =
+      `Hello ${role}!<br>Please fill out the form below to get started`;
+  }
+
+  function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    // Basic validation
+    if (!username || !password) {
+      alert("Please enter both username and password.");
+      return;
+    }
+
+    // =========================
+    // LECTURER LOGIN
+    // =========================
+    if (currentRole === 'lecturer') {
+
+      fetch("http://127.0.0.1:5000/api/login-lecturer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+        localStorage.setItem("userRole", "lecturer");
+        localStorage.setItem("lecturerUsername", username);
+
+        window.location.href = "dash.html";
+      })
+    .catch(() => alert("Server error"));
+
+    return;
+  }
+  else {
+      localStorage.setItem("userRole", "lecturer");
+      localStorage.setItem("lecturerSubject", data.subject);
+      window.location.href = "dash.html";
+    }
+
+  }
+
+
+    // =========================
+    // STUDENT LOGIN
+    // =========================
+    else {
+
+      // Student rule: Username must equal password (roll number login)
+      if (username !== password) {
+        alert("❌ For students, Username must equal Roll Number.");
+        return;
+      }
+
+      localStorage.setItem('userRole', 'student');
+      localStorage.setItem('studentRoll', username);
+
+      window.location.href = "stu-dash.html";
+    }
+  }
+</script>
+</body>
+</html>

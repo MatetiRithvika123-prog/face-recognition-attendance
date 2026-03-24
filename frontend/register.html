@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Attendance System</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .register-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-col {
+            flex: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #4c4cff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #3a3acc;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .login-link a {
+            color: #4c4cff;
+            text-decoration: none;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #e74c3c;
+            margin-top: 1rem;
+            text-align: center;
+            display: none;
+        }
+        .success-message {
+            color: #2ecc71;
+            margin-top: 1rem;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1>Create Account</h1>
+        
+        <form id="registerForm">
+            <div class="form-row">
+                <div class="form-col">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-col">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="rollNumber">Roll Number</label>
+                <input type="text" id="rollNumber" name="rollNumber" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="branch">Branch</label>
+                <select id="branch" name="branch" required>
+                    <option value="">Select Branch</option>
+                    <option value="CSE">Computer Science & Engineering</option>
+                    <option value="ECE">Electronics & Communication</option>
+                    <option value="EEE">Electrical & Electronics</option>
+                    <option value="MECH">Mechanical Engineering</option>
+                    <option value="CIVIL">Civil Engineering</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="userType">I am a</label>
+                <select id="userType" name="userType" required>
+                    <option value="student">Student</option>
+                    <option value="lecturer">Lecturer</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn">Create Account</button>
+            </div>
+            
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message">
+                Registration successful! Redirecting to login...
+            </div>
+        </form>
+        
+        <div class="login-link">
+            Already have an account? <a href="login.html">Login here</a>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const role = document.getElementById('userType').value;
+
+        if (password !== confirmPassword) {
+            showError('Passwords do not match');
+            return;
+        }
+
+        // ================= LECTURER REGISTRATION =================
+        if (role === "lecturer") {
+
+            const username = document.getElementById("username").value.trim();
+            const subject = username; // username is subject+number like MATH1
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/register-lecturer", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        subject: subject
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert("Lecturer Registered Successfully!");
+                    window.location.href = "doc.html";
+                } else {
+                    showError(data.error || "Registration failed");
+                }
+
+            } catch (error) {
+                showError("Server error. Please try again.");
+            }
+
+            return; // stop further execution
+        }
+
+        // ================= STUDENT REGISTRATION (UNCHANGED) =================
+
+        const userData = {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            rollNumber: document.getElementById('rollNumber').value,
+            branch: document.getElementById('branch').value,
+            username: document.getElementById('username').value,
+            password: password,
+            role: role
+        };
+
+        try {
+            const response = await fetch('http://localhost:5000/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('registerForm').reset();
+
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+
+            } else {
+                showError(data.message || 'Registration failed');
+            }
+
+        } catch (error) {
+            showError('An error occurred. Please try again.');
+        }
+    });
+
+    function showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 5000);
+    }
+</script>
+
+</body>
+</html>

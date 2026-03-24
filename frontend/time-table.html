@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blue Timetable Planner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f8ff;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      text-align: center;
+    }
+
+    th, td {
+      border: 1px solid #007ACC;
+      padding: 15px;
+      background-color: #e6f3fc;
+    }
+
+    th {
+      background-color: #007ACC;
+      color: white;
+    }
+
+    td:first-child, th:first-child {
+      font-weight: bold;
+      background-color: #b3d9f7;
+    }
+
+    td.lunch {
+      background-color: #fff3cd;
+      font-weight: bold;
+    }
+
+    td.editable:hover {
+      background-color: #cce8ff;
+      cursor: pointer;
+    }
+
+    h2 {
+      color: #007ACC;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Weekly Timetable</h2>
+
+  <table id="timetable">
+    <tr>
+      <th></th>
+      <th>10:00</th>
+      <th>10:40</th>
+      <th>11:20</th>
+      <th>12:00</th>
+      <th>12:40</th>
+      <th>Lunch</th>
+      <th>2:00</th>
+      <th>2:40</th>
+      <th>3:20</th>
+    </tr>
+    <tr><td>Monday</td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="lunch">Lunch</td><td class="editable"></td><td class="editable"></td><td class="editable"></td></tr>
+    <tr><td>Tuesday</td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="lunch">Lunch</td><td class="editable"></td><td class="editable"></td><td class="editable"></td></tr>
+    <tr><td>Wednesday</td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="lunch">Lunch</td><td class="editable"></td><td class="editable"></td><td class="editable"></td></tr>
+    <tr><td>Thursday</td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="lunch">Lunch</td><td class="editable"></td><td class="editable"></td><td class="editable"></td></tr>
+    <tr><td>Friday</td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="lunch">Lunch</td><td class="editable"></td><td class="editable"></td><td class="editable"></td></tr>
+    <tr><td>Saturday</td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="editable"></td><td class="lunch">Lunch</td><td class="editable"></td><td class="editable"></td><td class="editable"></td></tr>
+  </table>
+
+  <script>
+    document.querySelectorAll('.editable').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const text = prompt("Enter subject/activity:", cell.textContent);
+        if (text !== null) {
+          cell.textContent = text;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
